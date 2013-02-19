@@ -1,0 +1,89 @@
+<!doctype html>
+<html>
+  <head>
+    <title>Fractal Generator</title>
+    <link rel="stylesheet" type="text/css" href="style.css">
+
+    <script src="http://ajax.googleapis.com/ajax/libs/jquery/1.8.2/jquery.min.js"></script>
+    <script src="js/lightgl.min.js"></script>
+    <script src="js/jquery.mousewheel.js"></script>
+    <script src="js/jquery.simplespinner.js"></script>
+    <script src="js/ifs.js"></script>
+    <script src="js/ui.js"></script>
+    <script src="js/main.js"></script>
+  </head>
+  <body>
+    <div id="toolbar">
+      <h1>Fractal Generator</h1>
+      <div id="file-options">
+        <button id="new-fractal" class="primary">New</button>
+        <button id="load-fractal">Load</button>
+        <button id="save-fractal">Save</button>
+        <button id="export-fractal">Export Image</button>
+      </div>
+      <div id="animation-options">
+        <div id="animation-speed">Animation speed:
+          <div class="simple-spinner" data-value="100" data-min-value="-200" data-max-value="200" data-step-size="1"></div>
+        </div>
+        <button id="animation-button" class="primary">Animate!</button>
+      </div>
+    </div>
+    <div id="fractal-container">
+      <div id="the-fractal">
+      </div>
+      <canvas id="fractal-ui">
+      </canvas>
+    </div>
+    
+    <div class="sidebar-item">
+      <div class="sidebar-item-content">
+        <div>
+          Brightness: <div id="brightness" class="simple-spinner" data-value="100" data-min-value="70" data-max-value="300" data-step-size="1"></div>
+        </div>
+        <div>
+          <button id="item-add" type="button">Add frame</button>
+        </div>
+      </div>
+    </div>
+    
+    <div id="item-editor" class="sidebar-item">
+      <header>Frame properties</header>
+      <div class="sidebar-item-content">
+          <div id="item-coeffs">
+            <div>
+            <label><span>a: </span><input id="coeff-a" type="text"></label>
+            <label><span>b: </span><input id="coeff-b" type="text"></label>
+            <label><span>e: </span><input id="coeff-e" type="text"></label>
+            </div>
+            <div>
+            <label><span>c: </span><input id="coeff-c" type="text"></label>
+            <label><span>d: </span><input id="coeff-d" type="text"></label>
+            <label><span>f: </span><input id="coeff-f" type="text"></label>
+            </div>
+          </div>
+          <div id="item-rotation-speed">
+            Rotation speed:
+            <div class="simple-spinner" data-value="100" data-min-value="-200" data-max-value="200" data-step-size="1"></div>
+          </div>
+          <div id="item-color">
+            <div>
+              Red:
+              <div id="spinner-red" class="simple-spinner" data-value="0" data-min-value="0" data-max-value="1000" data-step-size="1"></div>
+            </div>
+            <div>
+              Green:
+              <div id="spinner-green" class="simple-spinner" data-value="0" data-min-value="0" data-max-value="1000" data-step-size="1"></div>
+            </div>
+            <div>
+              Blue:
+              <div id="spinner-blue" class="simple-spinner" data-value="0" data-min-value="0" data-max-value="1000" data-step-size="1"></div>
+            </div>
+            <div>
+              <button id="random-color" type="button">Random color</button>
+            </div>
+          </div>
+          <button id="item-delete" type="button">Delete frame</button>
+      </div>
+    </div>
+  </body>
+</html>

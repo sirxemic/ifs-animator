@@ -1,0 +1,264 @@
+@charset "utf-8";
+
+/* Reset based on meyer's reset.css */
+html, body, div, span, applet, object, iframe,
+h1, h2, h3, h4, h5, h6, p, blockquote, pre,
+a, abbr, acronym, address, big, cite, code,
+del, dfn, em, img, ins, kbd, q, s, samp,
+small, strike, strong, sub, sup, tt, var,
+b, u, i, center,
+dl, dt, dd, ol, ul, li,
+fieldset, form, label, legend,
+table, caption, tbody, tfoot, thead, tr, th, td,
+article, aside, canvas, details, embed, 
+figure, figcaption, footer, header, hgroup, 
+menu, nav, output, ruby, section, summary,
+time, mark, audio, video {
+	margin: 0;
+	padding: 0;
+	border: 0;
+	font-size: 100%;
+	font: inherit;
+	vertical-align: baseline;
+}
+/* HTML5 display-role reset for older browsers */
+article, aside, details, figcaption, figure, 
+footer, header, hgroup, menu, nav, section {
+	display: block;
+}
+
+body {
+	line-height: 1.3;
+}
+
+ol, ul {
+	list-style: none;
+}
+blockquote, q {
+	quotes: none;
+}
+blockquote:before, blockquote:after,
+q:before, q:after {
+	content: '';
+	content: none;
+}
+table {
+	border-collapse: collapse;
+	border-spacing: 0;
+}
+
+html, body { height: 100%; min-height: 740px; }
+
+body {
+  min-width: 1024px;
+  background: #eee;
+  position: relative;
+}
+
+body, button, input {
+  font-family: 	"Helvetica Neue", Helvetica, Arial, sans-serif;
+  font-size: 16px;
+}
+
+#toolbar {
+  background: #e6e6e6;
+  padding: 12px;
+  border-bottom: 5px solid #888;
+  box-shadow: 0 -1px 0 #000 inset;
+  height: 40px;
+}
+
+#toolbar > * { display: inline-block; vertical-align: middle; }
+
+#toolbar h1 {
+  font-size: 30px;
+  font-weight: bold;
+  margin-right: 20px;
+  line-height: 40px;
+  height: 40px;
+  letter-spacing: -0.08em;
+  float: right;
+}
+
+button::-moz-focus-inner,
+input::-moz-focus-inner {
+  padding: 0;
+  border: 0;
+}
+
+button {
+  border: none;
+  background: #d0d0d0;
+  line-height: 24px;
+  border-radius: 1.5px;
+  color: #333;
+  padding: 3px 12px;
+}
+
+button:hover {
+  background: #888;
+  color: #fff;
+}
+
+button:active {
+  background: #666;
+}
+
+button.primary {
+  background: #08f;
+  color: #fff;
+}
+
+button.primary:hover {
+  background: #0059a7;
+  color: #fff;
+}
+
+button.primary:active {
+  background: #00437d;
+}
+
+input {
+  border: none;
+  background: #fff;
+  line-height: 24px;
+  height: 24px;
+  border-radius: 1.5px;
+  color: #333;
+  padding: 3px 12px;
+}
+
+#animation-speed { display: inline-block; }
+
+input.small-int {
+  width: 38px;
+  text-align: right;
+}
+
+#file-options {
+  height: 40px;
+  line-height: 40px;
+  border-right: 1px solid #888;
+  padding-right: 20px;
+  margin-right: 20px;
+}
+
+#fractal-container {
+  position: absolute;
+  top: 69px;
+  bottom: 0;
+  right: 300px;
+  left: 0;
+  background: #000;
+}
+
+#fractal-container > * {
+  position: absolute;
+  top: 0;
+  left: 0;
+}
+
+#fractal-ui {
+  pointer-events: none;
+}
+
+#item-selector {
+  background: #eee;
+  width: 300px;
+  float: right;
+}
+
+.sidebar-item {
+  background: #eee;
+  width: 300px;
+  float: right;
+  clear: both;
+}
+
+.sidebar-item header {
+  padding: 10px;
+  background: #333;
+  color: #fff;
+  text-shadow: 0 -1px 0 #000;
+}
+
+.sidebar-item-content {
+  padding: 10px;
+  background: #eee;
+}
+
+#item-selector ul {
+  margin: 0 -10px 10px;
+}
+
+#item-selector ul li {
+  background: #fff;
+  padding: 4px 14px;
+  margin-bottom: 2px;
+  cursor: default;
+}
+
+#item-selector ul li:hover {
+  background: #888;
+  color: #fff;
+}
+
+#item-selector ul li.selected {
+  background: #dd0;
+}
+
+.remove-item {
+  float: right;
+  padding: 5px;
+  height: 20px;
+  line-height: 0;
+}
+
+#new-function {
+  width: 100%;
+  -moz-box-sizing: border-box;
+  -webkit-box-sizing: border-box;
+  -o-box-sizing: border-box;
+  -ms-box-sizing: border-box;
+  -box-sizing: border-box;
+}
+#item-coeffs { margin-bottom: 20px; }
+
+#item-coeffs > div {
+  margin-bottom: 3px;
+}
+
+#item-coeffs label { margin-right: 10px; }
+
+#item-coeffs label span {
+  width: 20px;
+  display: inline-block;
+  font-family: Georgia, serif;
+  font-style: italic;
+}
+
+#item-coeffs label:last-child {
+  float: right;
+  margin-right: 0;
+}
+
+#item-coeffs input {
+  width: 56px;
+  padding: 2px 3px;
+  font-size: 12px;
+  text-align: right;
+}
+
+#item-rotation-speed {
+  margin: 20px 0;
+}
+
+#item-color { margin: 20px 0; }
+
+#item-color > div {
+  display: block;
+  line-height: 35px;
+}
+
+.simple-spinner { display: inline-block; }
+#item-rotation-speed .simple-spinner, #item-color .simple-spinner { float: right; }
