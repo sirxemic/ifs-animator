@@ -6,12 +6,22 @@ var ifsRenderer;
 var canvasGl, $canvasGl;
 var canvas2d, $canvas2d;
 
+var textureSize = 1024;
+
 var cancelNextInit = false;
 function initIFS() {
-  ifs = new IFS(gl);
+  var wasAnimating = false;
+  if (ifs) ifs.dispose();
+  if (ifsRenderer) {
+    wasAnimating = ifsRenderer.animating;
+    ifsRenderer.dispose();
+  }
+
+  ifs = new IFS(gl, textureSize);
   ifsRenderer = new IFSRenderer(ifs, gl.canvas, gl, canvas2d.getContext('2d'));
+  ifsRenderer.animating = wasAnimating;
   
-  ifs.brightness = 1;
+  ifs.brightness = 1.02;
   
   for (var i = 0; i < 3; i++) {
     var angle = Math.random() * 2 * Math.PI;
@@ -75,9 +85,9 @@ function saveIFS() {
 }
 
 function loadIFS(values) {
-  var newIfs = new IFS(gl);
+  var newIfs = new IFS(gl, textureSize);
   var newIfsRenderer = new IFSRenderer(newIfs, gl.canvas, gl, canvas2d.getContext('2d'));
-  
+
   values = values.split('|');
   var error = false, m, it = 0;
   function next() {
@@ -133,8 +143,18 @@ function loadIFS(values) {
     newIfs.functions.push(object);
   }
   
+  
+  var wasAnimating = false;
+  
+  if (ifs) ifs.dispose();
+  if (ifsRenderer) {
+    wasAnimating = ifsRenderer.animating;
+    ifsRenderer.dispose();
+  }
+  
   ifs = newIfs;
   ifsRenderer = newIfsRenderer;
+  ifsRenderer.animating = wasAnimating;
 }
 
 gl.onupdate = function(seconds) {
@@ -142,14 +162,85 @@ gl.onupdate = function(seconds) {
   ifsRenderer.step(seconds);
 };
 
+var fading = false;
+
 gl.ondraw = function() {
   ifs.update();
+  if (epilepsySafeTimer == 0) {
+    if (!fading) {
+      fading = true;
+      $canvasGl.animate({'opacity': 1}, 1000, 'swing', function() {fading = false;});
+    }
+  }
+  else {
+    fading = false;
+    $canvasGl.stop(true).css('opacity', 0);
+  }
   ifsRenderer.render();
 };
 
 gl.canvas.addEventListener('contextmenu', function(e) {
   e.preventDefault();
 });
+
+function glTextureToImage(texture) {
+  var width = texture.width, height = texture.height,
+      prevWidth = parseInt($canvasGl.css('width')), prevHeight = parseInt($canvasGl.css('height'));
+  
+  $canvasGl.css({width: width, height: height});
+  canvasGl.width = width;
+  canvasGl.height = height;
+  
+  gl.viewport(0, 0, width, height);
+  
+  glTextureToImage.shader = glTextureToImage.shader || new GL.Shader([
+    'varying vec2 coord;',
+
+    'void main() {',
+      'coord = (gl_Vertex.xy + 1.0) * 0.5;',
+      'gl_Position.zw = gl_Vertex.zw;',
+      'gl_Position.xy = gl_Vertex.xy;',
+    '}'
+  ].join('\n'), [
+    'uniform sampler2D texture;',
+    'varying vec2 coord;',
+
+    'void main() {',
+      'gl_FragColor = texture2D(texture, coord);',
+    '}'
+  ].join('\n'));
+  
+  texture.bind(0);
+  glTextureToImage.shader.uniforms({
+    texture: 0
+  }).draw(mesh);
+  texture.unbind(0);
+  
+  var result = canvasGl.toDataURL();
+  
+  $canvasGl.css({width: prevWidth, height: prevHeight});
+  canvasGl.width = prevWidth;
+  canvasGl.height = prevHeight;
+  
+  gl.viewport(0, 0, prevWidth, prevHeight);
+  
+  return result;
+}
+
+function resize() {
+  var sizeW = $('#fractal-container').width(), 
+      sizeH = $('#fractal-container').height();
+      
+  $canvasGl.css({width: sizeW, height: sizeH});
+  canvasGl.width = sizeW;
+  canvasGl.height = sizeH;
+  
+  gl.viewport(0, 0, sizeW, sizeH);
+  
+  $canvas2d.css({width: sizeW, height: sizeH});
+  canvas2d.width = sizeW;
+  canvas2d.height = sizeH;
+}
 
 $(document).ready(function() {
   canvasGl = gl.canvas
@@ -162,21 +253,6 @@ $(document).ready(function() {
   $('#the-fractal').replaceWith($(canvasGl));
   
   gl.animate();
-  
-  function resize() {
-    var sizeW = $('#fractal-container').width(), 
-        sizeH = $('#fractal-container').height();
-        
-    $canvasGl.css({width: sizeW, height: sizeH});
-    canvasGl.width = sizeW;
-    canvasGl.height = sizeH;
-    
-    gl.viewport(0, 0, sizeW, sizeH);
-    
-    $canvas2d.css({width: sizeW, height: sizeH});
-    canvas2d.width = sizeW;
-    canvas2d.height = sizeH;
-  }
   
   $(window).resize(resize);
   resize();

@@ -2,10 +2,11 @@ var __tempMatrix = new GL.Matrix(),
     __tempMatrix2 = new GL.Matrix(),
     __tempObject = {};
 
-function IFS(gl) {
+function IFS(gl, textureSize) {
+  textureSize = textureSize || 1024;
   this.gl = gl;
-	this.accumulatorTexture = new GL.Texture(1024, 1024);
-	this.fractalTexture = new GL.Texture(1024, 1024);
+	this.accumulatorTexture = new GL.Texture(textureSize, textureSize);
+	this.fractalTexture = new GL.Texture(textureSize, textureSize);
 
   this.globalTransform = {
     matrix: new GL.Matrix(), 
@@ -40,23 +41,41 @@ function IFS(gl) {
 	this.reset();
 }
 
+var epilepsyCheck = false;
+var epilepsySafeTimer = 0;
+
 IFS.prototype = {
+  dispose: function(e) {
+    this.gl.deleteTexture(this.accumulatorTexture.id);
+    this.gl.deleteTexture(this.fractalTexture.id);
+  },
+  
   remove: function(object) {
     var i = typeof object === "number" ? object : this.functions.indexOf(object);
     this.functions.splice(i, 1);
   },
+  
+  resizeTextures: function(size) {
+    this.gl.deleteTexture(this.accumulatorTexture.id);
+    this.gl.deleteTexture(this.fractalTexture.id);
+    
+    this.accumulatorTexture = new GL.Texture(size, size);
+    this.fractalTexture = new GL.Texture(size, size);
+    
+    this.reset();
+  },
+  
 	reset: function() {
     var gl = this.gl;
-    
-		this.accumulatorTexture.drawTo(function() {
-			gl.clear(gl.COLOR_BUFFER_BIT);
-			gl.clearColor(0.0, 0.0, 0.0, 1.0);
-		});
-		
+
 		this.fractalTexture.drawTo(function() {
-			gl.clear(gl.COLOR_BUFFER_BIT);
+			gl.clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT);
 			gl.clearColor(1.0, 1.0, 1.0, 1.0);
 		});
+
+    if (epilepsyCheck) {
+      epilepsySafeTimer = 5;
+    }
 	},
 	
 	update: function() {	
@@ -85,7 +104,7 @@ IFS.prototype = {
 		var that = this, functions = this.functions;
 
 		this.accumulatorTexture.drawTo(function() {
-			that.gl.clear(gl.COLOR_BUFFER_BIT | that.gl.DEPTH_BUFFER_BIT);
+			that.gl.clear(that.gl.COLOR_BUFFER_BIT | that.gl.DEPTH_BUFFER_BIT);
 		
 			that.fractalTexture.bind(0);
 			for (var i = 0; i < functions.length; i++) {
@@ -103,6 +122,8 @@ IFS.prototype = {
 		});
 		
 		this.accumulatorTexture.swapWith(this.fractalTexture);
+    
+    if (epilepsySafeTimer > 0) epilepsySafeTimer--;
 	},
   
   getBoundingBox: function() {
@@ -202,19 +223,25 @@ function IFSRenderer(ifs, glCanvas, gl, ctx2d) {
   this.savedFunctions = [];
   this.lockFunctions = true;
   
+  // Proxies have the same id, so using .off will remove all proxies. Therefore, use namespaces
+  this.namespace = 'ns' + Math.random();
   this.$gl
-    .on('mouseover', $.proxy(this.mouseover, this))
-    .on('mouseout', $.proxy(this.mouseout, this))
-    .on('mousedown', $.proxy(this.mousedown, this))
-    .on('mousemove', $.proxy(this.mousemove, this))
-    .on('mouseup', $.proxy(this.mouseup, this))
-    .on('mousewheel', $.proxy(this.mousewheel, this))
-    .on('dblclick', $.proxy(this.dblclick, this));
-    
+    .on('mouseover.' + this.namespace, $.proxy(this.mouseover, this))
+    .on('mouseout.' + this.namespace, $.proxy(this.mouseout, this))
+    .on('mousedown.' + this.namespace, $.proxy(this.mousedown, this))
+    .on('mousemove.' + this.namespace, $.proxy(this.mousemove, this))
+    .on('mouseup.' + this.namespace, $.proxy(this.mouseup, this))
+    .on('mousewheel.' + this.namespace, $.proxy(this.mousewheel, this))
+    .on('dblclick.' + this.namespace, $.proxy(this.dblclick, this));
+
   this.mouseDown = -1;
 }
 
 IFSRenderer.prototype = {
+  dispose: function(e) {
+    this.$gl.off('.' + this.namespace);
+  },
+  
   mouseover: function(e) {
     this.visible = true;
   },
@@ -381,17 +408,8 @@ IFSRenderer.prototype = {
               m[4] -= ddy;
               m[5] -= ddy;
             }
-            else {
-              m = this.ifs.globalTransform.matrix.m;
-              m[3] += deltaX / this.scale;
-              m[7] += -deltaY / this.scale;
-              m[0] -= deltaX / this.scale;
-              m[1] -= deltaX / this.scale;
-              m[4] -= -deltaY / this.scale;
-              m[5] -= -deltaY / this.scale;
-            }
           }
-          else {
+          else if (this.selected != this.ifs.globalTransform) {
             // One of the reference x or y axes was selected
             var coords = this.objectPropertiesToScreen(this.selected);
             var scale, angleDiff;
@@ -518,7 +536,7 @@ IFSRenderer.prototype = {
     var delta;
     if (this.width < this.height) delta = [this.height/this.width, 1];
     else delta = [1, this.width / this.height];
-    
+
     this.ifs.fractalTexture.bind(0);
     IFSRenderer.shader.uniforms({
       texture: 0,

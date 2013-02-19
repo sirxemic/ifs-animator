@@ -1,12 +1,37 @@
 function initGuiControls() {
-
-  $('#new-fractal').click(initIFS); 
+  function ifsBrightnessToUiBrightness(value) {
+    return 100 * value - 2;
+  }
+  
+  function uiBrightnessToIfsBrightness(value) {
+    return (value + 2) / 100;
+  }
+  
+  $('#brightness').simpleSpinner({value: ifsBrightnessToUiBrightness(ifs.brightness)});
+  
+  $('#new-fractal').click(function() {
+    initIFS();
+    $('#brightness').simpleSpinner({value: ifsBrightnessToUiBrightness(ifs.brightness)});
+  }); 
   $('#save-fractal').click(function() {
     window.prompt("Copy to clipboard: Ctrl+C, Enter", saveIFS());
   });
   $('#load-fractal').click(function() {
-    loadIFS(window.prompt("Paste here: Ctrl+V, Enter"));
+    var input = window.prompt("Paste here: Ctrl+V, Enter");
+    if (!input) return;
+    loadIFS(input);
+    $('#brightness').simpleSpinner({value: ifsBrightnessToUiBrightness(ifs.brightness)});
   });
+  
+  $('#export-fractal').click(function() {
+    $('#export-overlay').show();
+    var $img = $('#export-overlay img');
+    $img[0].src = glTextureToImage(ifs.fractalTexture);
+    setTimeout(function() {
+      $img.css({'margin-left': -$img.outerWidth() / 2, 'margin-top': -$img.outerHeight() / 2});
+    }, 10);
+  });
+  $('#export-overlay').click(function() { $(this).hide(); })
 
   $('.simple-spinner').simpleSpinner();
   
@@ -19,7 +44,7 @@ function initGuiControls() {
   });
   
   $('#brightness').bind('change', function(e, value) {
-    ifs.brightness = value / 100;
+    ifs.brightness = uiBrightnessToIfsBrightness(value);
   });
   
   $('#spinner-red').bind('change', function(e, value) {
@@ -90,6 +115,7 @@ function initGuiControls() {
   $('#random-color').click(function() {
     ifsRenderer.selected.color = [Math.round(Math.random() * 1000), Math.round(Math.random() * 1000), Math.round(Math.random() * 1000)];
     updateProperties();
+    ifs.reset();
   });
   
   $('#item-delete').click(function() {
@@ -166,4 +192,27 @@ function initGuiControls() {
   }
 
   $canvasGl.on('select', updateProperties).on('change', updateProperties);
+  
+  $('#hq-fractal').click(function() {
+    ifs.resizeTextures(textureSize = 2048);
+    $(this).hide();
+    $('#lq-fractal').show();
+  });
+  
+  $('#lq-fractal').click(function() {
+    ifs.resizeTextures(textureSize = 1024);
+    $(this).hide();
+    $('#hq-fractal').show();
+  });
+  
+  $('#disable-flashes').click(function() {
+    epilepsyCheck = true;
+    $(this).hide();
+    $('#enable-flashes').show();
+  });
+  $('#enable-flashes').click(function() {
+    epilepsyCheck = false;
+    $(this).hide();
+    $('#disable-flashes').show();
+  });
 }

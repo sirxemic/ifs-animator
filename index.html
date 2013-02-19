@@ -13,8 +13,10 @@
     <script src="js/main.js"></script>
   </head>
   <body>
+<a href="https://github.com/sirXemic/IFS-FG"><img style="position: absolute; top: 0; left: 0; border: 0; z-index: 900" width="120" height="120" src="https://s3.amazonaws.com/github/ribbons/forkme_left_red_aa0000.png" alt="Fork me on GitHub"></a>
+  
     <div id="toolbar">
-      <h1>Fractal Generator</h1>
+      <h1>IFS Fractal Generator</h1>
       <div id="file-options">
         <button id="new-fractal" class="primary">New</button>
         <button id="load-fractal">Load</button>
@@ -23,11 +25,12 @@
       </div>
       <div id="animation-options">
         <div id="animation-speed">Animation speed:
-          <div class="simple-spinner" data-value="100" data-min-value="-200" data-max-value="200" data-step-size="1"></div>
+          <div class="simple-spinner" data-value="100" data-min-value="-500" data-max-value="500" data-step-size="1"></div>
         </div>
         <button id="animation-button" class="primary">Animate!</button>
       </div>
     </div>
+    
     <div id="fractal-container">
       <div id="the-fractal">
       </div>
@@ -84,6 +87,19 @@
           </div>
           <button id="item-delete" type="button">Delete frame</button>
       </div>
+    </div>
+    
+    <div id="extra" class="sidebar-item">
+      <div class="sidebar-item-content">
+        <button id="hq-fractal">Enable high quality fractals<br>(requires a modern graphics card)</button>
+        <button id="lq-fractal" style="display: none">Disable high quality fractals</button>
+        <button id="disable-flashes">I have epilepsy</button>
+        <button id="enable-flashes" style="display: none">I don't have epilepsy</button>
+      </div>
+    </div>
+    
+    <div id="export-overlay" style="display: none">
+      <img>
     </div>
   </body>
 </html>
