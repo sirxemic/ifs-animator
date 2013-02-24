@@ -131,6 +131,9 @@
         , data = $this.data('simpleSpinner')
       if (!data) $this.data('simpleSpinner', (data = new SimpleSpinner(this, options)));
       else {
+        for (var m in options) {
+          options[m] = 0 | options[m];
+        } 
         $.extend(data.options, options);
         data.updateValue(data.options.value, true);
       }

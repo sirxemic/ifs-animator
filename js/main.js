@@ -1,3 +1,9 @@
+var settings = {
+  textureSize: 1024,
+  animating: false,
+  animationSpeed: 100,
+};
+
 var gl = GL.create();
 var mesh = GL.Mesh.plane();
 
@@ -6,20 +12,15 @@ var ifsRenderer;
 var canvasGl, $canvasGl;
 var canvas2d, $canvas2d;
 
-var textureSize = 1024;
-
 var cancelNextInit = false;
 function initIFS() {
-  var wasAnimating = false;
   if (ifs) ifs.dispose();
-  if (ifsRenderer) {
-    wasAnimating = ifsRenderer.animating;
-    ifsRenderer.dispose();
-  }
+  if (ifsRenderer) ifsRenderer.dispose();
 
-  ifs = new IFS(gl, textureSize);
+  ifs = new IFS(gl, settings.textureSize);
   ifsRenderer = new IFSRenderer(ifs, gl.canvas, gl, canvas2d.getContext('2d'));
-  ifsRenderer.animating = wasAnimating;
+  ifsRenderer.animating = settings.animating;
+  ifsRenderer.animationSpeed = settings.animationSpeed;
   
   ifs.brightness = 1.02;
   
@@ -35,15 +36,14 @@ function initIFS() {
         0.0, 0.0, 1.0, 0.0,
         0.0, 0.0, 0.0, 1.0
       ),
-      color: [0 | Math.random() * 1000, 0 | Math.random() * 1000, 0 | Math.random() * 1000],
+      color: [Math.random() * 100, Math.random() * 100, Math.random() * 100],
       _color: [1,1,1,1],
       rotationSpeed: 0 | Math.random() * 100 + 50
     };
     ifs.functions.push(item);
   }
   
-  ifs.globalTransform.matrix.m[0] *= 0.5;
-  ifs.globalTransform.matrix.m[5] *= 0.5;
+  ifsRenderer.fitToScreen();
 }
 
 function saveIFS() {
@@ -53,7 +53,7 @@ function saveIFS() {
   }
   
   append(ifs.brightness);
-  append(ifsRenderer.rotationSpeed);
+  append(ifsRenderer.animationSpeed);
   
   m = ifs.globalTransform.matrix.m;
   append(m[0]);
@@ -85,8 +85,9 @@ function saveIFS() {
 }
 
 function loadIFS(values) {
-  var newIfs = new IFS(gl, textureSize);
+  var newIfs = new IFS(gl, settings.textureSize);
   var newIfsRenderer = new IFSRenderer(newIfs, gl.canvas, gl, canvas2d.getContext('2d'));
+  newIfsRenderer.animating = settings.animating;
 
   values = values.split('|');
   var error = false, m, it = 0;
@@ -103,7 +104,7 @@ function loadIFS(values) {
   }
   
   newIfs.brightness = next();
-  newIfsRenderer.rotationSpeed = next();
+  newIfsRenderer.animationSpeed = next();
   
   m = newIfs.globalTransform.matrix.m;
   m[0] = next(); if (error) return;
@@ -147,14 +148,10 @@ function loadIFS(values) {
   var wasAnimating = false;
   
   if (ifs) ifs.dispose();
-  if (ifsRenderer) {
-    wasAnimating = ifsRenderer.animating;
-    ifsRenderer.dispose();
-  }
+  if (ifsRenderer) ifsRenderer.dispose();
   
   ifs = newIfs;
   ifsRenderer = newIfsRenderer;
-  ifsRenderer.animating = wasAnimating;
 }
 
 gl.onupdate = function(seconds) {
@@ -248,9 +245,16 @@ $(document).ready(function() {
   $canvas2d = $('#fractal-ui');
   canvas2d = $canvas2d[0];
   
-  initIFS();
+  $(window).bind('hashchange', function() {
+    console.log('hashchange', document.location.hash);
+		loadIFS(document.location.hash.substr(1));
+	});
+  
+  loadIFS(document.location.hash.substr(1));
+  if (ifs === undefined) initIFS();
 
   $('#the-fractal').replaceWith($(canvasGl));
+  $canvasGl.attr({'id': '#the-fractal', 'tabindex': '1'}).mousedown(function() { $(this).focus(); });
   
   gl.animate();
   

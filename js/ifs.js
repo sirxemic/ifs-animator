@@ -52,7 +52,7 @@ IFS.prototype = {
   
   remove: function(object) {
     var i = typeof object === "number" ? object : this.functions.indexOf(object);
-    this.functions.splice(i, 1);
+    if (i >= 0 && i < this.functions.length) this.functions.splice(i, 1);
   },
   
   resizeTextures: function(size) {
@@ -97,8 +97,15 @@ IFS.prototype = {
 			f._color[1] = totalColor[1] * area != 0 ? this.brightness * f.color[1] / (totalColor[1] * area) : 0;
 			f._color[2] = totalColor[2] * area != 0 ? this.brightness * f.color[2] / (totalColor[2] * area) : 0;
 		}
-    
 	},
+  
+  getColorContribution: function(f, component) {
+    var sum = 0;
+    for (var i = 0, l = this.functions.length; i < l; i++) {
+			sum += this.functions[i].color[component];
+		}
+    return f.color[component] / sum;
+  },
 
 	step: function(seconds) {
 		var that = this, functions = this.functions;
@@ -125,6 +132,84 @@ IFS.prototype = {
     
     if (epilepsySafeTimer > 0) epilepsySafeTimer--;
 	},
+  
+  getBoundingCircle: function(maxIt) {
+    var l = this.functions.length, m, i;
+    var bCircle = {
+      radius: 1,
+      x: 0,
+      y: 0
+    };
+    
+    maxIt = maxIt || 100;
+
+    var newCircle = {};
+    var tempCircle = {};
+
+    var v, points, p, t;
+    
+    var shrinkFactor, prevShrinkFactor = 1;
+    
+    function circleSpanning(circle1, circle2) {
+      var dx = circle1.x - circle2.x, dy = circle1.y - circle2.y,
+          dis = Math.sqrt(dx * dx + dy * dy);
+          
+      if (dis < 1E-9) 
+        return {
+          radius: Math.max(circle1.radius, circle2.radius),
+          x: circle1.x,
+          y: circle1.y
+        };
+        
+      if (dis + circle2.radius <= circle1.radius) 
+        return {
+          radius: circle1.radius,
+          x: circle1.x,
+          y: circle1.y
+        };
+        
+      if (dis + circle1.radius <= circle2.radius) 
+        return {
+          radius: circle2.radius,
+          x: circle2.x,
+          y: circle2.y
+        };
+          
+      var span = dis + circle1.radius + circle2.radius,
+          half = span / 2,
+          midX = circle2.x + dx * (half - circle2.radius) / dis,
+          midY = circle2.y + dy * (half - circle2.radius) / dis;
+      
+      return {radius: half, x: midX, y: midY };
+    }
+    
+    for (var k = 0; k < maxIt; k++) {
+      m = this.functions[0].matrix.m;
+      newCircle.radius = bCircle.radius * Math.sqrt(Math.max(m[0] * m[0] + m[4] * m[4], m[1] * m[1] + m[5] * m[5]));
+      newCircle.x = m[0] * bCircle.x + m[1] * bCircle.y + m[3];
+      newCircle.y = m[4] * bCircle.x + m[5] * bCircle.y + m[7];
+      
+      for (i = 1; i < l; i++) {
+        m = this.functions[i].matrix.m;
+        tempCircle.radius = bCircle.radius * Math.sqrt(Math.max(m[0] * m[0] + m[4] * m[4], m[1] * m[1] + m[5] * m[5]));
+        tempCircle.x = m[0] * bCircle.x + m[1] * bCircle.y + m[3];
+        tempCircle.y = m[4] * bCircle.x + m[5] * bCircle.y + m[7];
+        
+        newCircle = circleSpanning(tempCircle, newCircle);
+      }
+      
+      shrinkFactor = newCircle.radius / bCircle;
+      if (shrinkFactor > 1 && prevShrinkFactor > 1) return null;
+      
+      prevShrinkFactor = shrinkFactor;
+
+      t = newCircle;
+      newCircle = bCircle;
+      bCircle = t;
+    }
+
+    return bCircle;
+  },
   
   getBoundingBox: function() {
     var l = this.functions.length, m, i;
@@ -194,7 +279,7 @@ function IFSRenderer(ifs, glCanvas, gl, ctx2d) {
   this.selectedPart = null;
   this.previousSelectionAngle = 0;
   
-  this.rotationSpeed = 100;
+  this.animationSpeed = 100;
   this.animating = false;
   
   this.scale = 1;
@@ -232,7 +317,8 @@ function IFSRenderer(ifs, glCanvas, gl, ctx2d) {
     .on('mousemove.' + this.namespace, $.proxy(this.mousemove, this))
     .on('mouseup.' + this.namespace, $.proxy(this.mouseup, this))
     .on('mousewheel.' + this.namespace, $.proxy(this.mousewheel, this))
-    .on('dblclick.' + this.namespace, $.proxy(this.dblclick, this));
+    .on('dblclick.' + this.namespace, $.proxy(this.dblclick, this))
+    .on('keydown.' + this.namespace, $.proxy(this.keydown, this));
 
   this.mouseDown = -1;
 }
@@ -512,6 +598,16 @@ IFSRenderer.prototype = {
     }
     
   },
+  
+  keydown: function(e) {
+    if (e.keyCode == 46) {
+      if (this.selected) {
+        this.ifs.remove(this.selected);
+        this.selected = null;
+        this.$gl.trigger('remove', this.selected);
+      }
+    }
+  },
 
   select: function(item, where, nobubble) {
     this.selected = item;
@@ -548,6 +644,27 @@ IFSRenderer.prototype = {
   renderUi: function() {
     this.ctx2d.clearRect(0, 0, this.width, this.height);
     if (this.selected == null && !this.visible) return;
+
+    var boundingCircle = this.ifs.getBoundingCircle();
+    if (boundingCircle) {
+      var m = this.ifs.globalTransform.matrix.m;
+      
+      this.ctx2d.strokeStyle = 'rgba(255,255,255,0.3)';
+      this.ctx2d.lineWidth = 2;
+      var realRadius = Math.sqrt(m[0] * m[0] + m[4] * m[4]) * boundingCircle.radius * this.scale;
+      
+      var resolution = ((realRadius >> 1) || 1) << 1;
+      for (var i = 0; i < resolution; i+=2) {
+        this.ctx2d.beginPath();
+        this.ctx2d.arc(
+          this.width * 0.5 + (boundingCircle.x * m[0] + boundingCircle.y * m[1] + m[3]) * this.scale, 
+          this.height * 0.5 - (boundingCircle.x * m[4] + boundingCircle.y * m[5] + m[7]) * this.scale, 
+          realRadius, 
+          2 * Math.PI * (i / resolution), 2 * Math.PI * ((i+1) / resolution)
+        );
+        this.ctx2d.stroke();
+      }
+    }
     
     var selectedIndex = -1;
     
@@ -572,7 +689,7 @@ IFSRenderer.prototype = {
   },
   
   renderGlobalTransform: function() {
-    this.renderObject(this.ifs.globalTransform, '#fff', 6, this.selected == this.ifs.globalTransform);
+    this.renderObject(this.ifs.globalTransform, '#fff', 8, this.selected == this.ifs.globalTransform);
   },
   
   renderObject: function(object, color, thickness, selected) {
@@ -631,7 +748,7 @@ IFSRenderer.prototype = {
 	step: function(seconds) {
 		var functions = this.ifs.functions;
     
-    if (this.animating && this.rotationSpeed != 0) {
+    if (this.animating && this.animationSpeed != 0) {
       this.saveFunctions();
       
       var m = this.ifs.globalTransform.matrix.m,
@@ -639,8 +756,8 @@ IFSRenderer.prototype = {
           b = m[1],
           c = m[4],
           d = m[5],
-          cos = Math.cos(seconds * 2 * Math.PI * this.ifs.globalTransform.rotationSpeed * this.rotationSpeed / 100000),
-          sin = Math.sin(seconds * 2 * Math.PI * this.ifs.globalTransform.rotationSpeed * this.rotationSpeed / 100000);
+          cos = Math.cos(seconds * 2 * Math.PI * this.ifs.globalTransform.rotationSpeed * this.animationSpeed / 100000),
+          sin = Math.sin(seconds * 2 * Math.PI * this.ifs.globalTransform.rotationSpeed * this.animationSpeed / 100000);
       
       m[0] = cos * a - sin * c;
       m[1] = cos * b - sin * d;
@@ -655,8 +772,8 @@ IFSRenderer.prototype = {
         b = m[1];
         c = m[4];
         d = m[5];
-        cos = Math.cos(seconds * 2 * Math.PI * functions[i].rotationSpeed * this.rotationSpeed / 100000);
-        sin = Math.sin(seconds * 2 * Math.PI * functions[i].rotationSpeed * this.rotationSpeed / 100000);
+        cos = Math.cos(seconds * 2 * Math.PI * functions[i].rotationSpeed * this.animationSpeed / 100000);
+        sin = Math.sin(seconds * 2 * Math.PI * functions[i].rotationSpeed * this.animationSpeed / 100000);
         
         m[0] = cos * a - sin * c;
         m[1] = cos * b - sin * d;
@@ -709,23 +826,20 @@ IFSRenderer.prototype = {
   },
   
   fitToScreen: function() {
-    var bb = this.ifs.getBoundingBox(true), 
-        bbw = bb.xMax - bb.xMin, 
-        bbh = bb.yMax - bb.yMin,
-        bbx = (bb.xMax + bb.xMin) / 2,
-        bby = (bb.yMax + bb.yMin) / 2,
-        m = this.ifs.globalTransform.matrix.m;
+    var bc = this.ifs.getBoundingCircle(), 
+        m = this.ifs.globalTransform.matrix.m,
+        scale = 1 / (bc.radius * Math.sqrt(m[0] * m[0] + m[4] * m[4]));
 
-    scale = 2 / Math.max(bbw, bbh);
-    
     m[0] *= scale;
     m[1] *= scale;
     m[4] *= scale;
     m[5] *= scale;
-    m[3] *= scale;
-    m[7] *= scale;
-    m[3] -= bbx * scale;
-    m[7] -= bby * scale;
+    
+    var newX = bc.x * m[0] + bc.y * m[1] + m[3];
+    var newY = bc.x * m[4] + bc.y * m[5] + m[7];
+    
+    m[3] -= newX;
+    m[7] -= newY;
   }
 }
 

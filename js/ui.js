@@ -1,12 +1,12 @@
+function ifsBrightnessToUiBrightness(value) {
+  return 100 * value - 2;
+}
+
+function uiBrightnessToIfsBrightness(value) {
+  return (value + 2) / 100;
+}
+
 function initGuiControls() {
-  function ifsBrightnessToUiBrightness(value) {
-    return 100 * value - 2;
-  }
-  
-  function uiBrightnessToIfsBrightness(value) {
-    return (value + 2) / 100;
-  }
-  
   $('#brightness').simpleSpinner({value: ifsBrightnessToUiBrightness(ifs.brightness)});
   
   $('#new-fractal').click(function() {
@@ -36,7 +36,7 @@ function initGuiControls() {
   $('.simple-spinner').simpleSpinner();
   
   $('#animation-speed .simple-spinner').bind('change', function(e, value) {
-    ifsRenderer.rotationSpeed = value;
+    ifsRenderer.animationSpeed = settings.animationSpeed = value;
   });
   
   $('#item-rotation-speed .simple-spinner').bind('change', function(e, value) {
@@ -61,13 +61,18 @@ function initGuiControls() {
     var $this = $(this);
     $this.toggleClass('on');
     if ($this.hasClass('on')) {
-      ifsRenderer.animating = true;
+      ifsRenderer.animating = settings.animating = true;
       $this.html('Animating...');
     }
     else {
-      ifsRenderer.animating = false;
+      ifsRenderer.animating = settings.animating = false;
       $this.html('Animate!');
     }
+  });
+  
+  $('#fit-to-screen').click(function() {
+    ifsRenderer.fitToScreen();
+    ifs.reset();
   });
   
   $('#item-add').click(function() {
@@ -81,7 +86,7 @@ function initGuiControls() {
         0.0, 0.0, 1.0, 0.0,
         0.0, 0.0, 0.0, 1.0
       ]),
-      color: [Math.round(Math.random() * 1000), Math.round(Math.random() * 1000), Math.round(Math.random() * 1000)],
+      color: [Math.round(Math.random() * 100), Math.round(Math.random() * 100), Math.round(Math.random() * 100)],
       _color: [1,1,1,1],
       rotationSpeed: 50 + 0 | Math.random() * 100
     };
@@ -113,7 +118,7 @@ function initGuiControls() {
   });
   
   $('#random-color').click(function() {
-    ifsRenderer.selected.color = [Math.round(Math.random() * 1000), Math.round(Math.random() * 1000), Math.round(Math.random() * 1000)];
+    ifsRenderer.selected.color = [Math.round(Math.random() * 100), Math.round(Math.random() * 100), Math.round(Math.random() * 100)];
     updateProperties();
     ifs.reset();
   });
@@ -137,10 +142,10 @@ function initGuiControls() {
       $('#item-editor').show();
       
       if (ifsRenderer.selected == ifs.globalTransform) {
-        $('#item-color, #item-delete').hide();
+        $('#item-color, #item-delete, #item-coeffs').hide();
       }
       else {
-        $('#item-color, #item-delete').show();
+        $('#item-color, #item-delete, #item-coeffs').show();
         
         $('#spinner-red').simpleSpinner({value: ifsRenderer.selected.color[0]});
         $('#spinner-green').simpleSpinner({value: ifsRenderer.selected.color[1]});
@@ -191,16 +196,19 @@ function initGuiControls() {
     })(coeff);
   }
 
-  $canvasGl.on('select', updateProperties).on('change', updateProperties);
+  $canvasGl.on('select change remove', updateProperties);
+  updateProperties();
   
   $('#hq-fractal').click(function() {
-    ifs.resizeTextures(textureSize = 2048);
+    settings.textureSize = 2048;
+    ifs.resizeTextures(settings.textureSize);
     $(this).hide();
     $('#lq-fractal').show();
   });
   
   $('#lq-fractal').click(function() {
-    ifs.resizeTextures(textureSize = 1024);
+    settings.textureSize = 1024;
+    ifs.resizeTextures(settings.textureSize);
     $(this).hide();
     $('#hq-fractal').show();
   });
