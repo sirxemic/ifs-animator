@@ -13,16 +13,14 @@ function initGuiControls() {
     initIFS();
     $('#brightness').simpleSpinner({value: ifsBrightnessToUiBrightness(ifs.brightness)});
   }); 
-  $('#save-fractal').click(function() {
-    window.prompt("Copy to clipboard: Ctrl+C, Enter", saveIFS());
-  });
-  $('#load-fractal').click(function() {
-    var input = window.prompt("Paste here: Ctrl+V, Enter");
-    if (!input) return;
-    loadIFS(input);
-    $('#brightness').simpleSpinner({value: ifsBrightnessToUiBrightness(ifs.brightness)});
-  });
   
+  $('#save-fractal').click(function() {
+    var path = window.location.toString(), hashPos = path.indexOf('#');
+    if (hashPos != -1) path = path.substring(0,hashPos+1);
+    else path += "#";
+    window.prompt("Fractal URL:", path + saveIFS());
+  });
+
   $('#export-fractal').click(function() {
     $('#export-overlay').show();
     var $img = $('#export-overlay img');
@@ -31,6 +29,7 @@ function initGuiControls() {
       $img.css({'margin-left': -$img.outerWidth() / 2, 'margin-top': -$img.outerHeight() / 2});
     }, 10);
   });
+  
   $('#export-overlay').click(function() { $(this).hide(); })
 
   $('.simple-spinner').simpleSpinner();
