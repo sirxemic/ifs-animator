@@ -69,8 +69,8 @@ IFS.prototype = {
     var gl = this.gl;
 
 		this.fractalTexture.drawTo(function() {
-			gl.clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT);
 			gl.clearColor(1.0, 1.0, 1.0, 1.0);
+			gl.clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT);
 		});
 
     if (epilepsyCheck) {
@@ -111,6 +111,7 @@ IFS.prototype = {
 		var that = this, functions = this.functions;
 
 		this.accumulatorTexture.drawTo(function() {
+			that.gl.clearColor(0.0, 0.0, 0.0, 1.0);
 			that.gl.clear(that.gl.COLOR_BUFFER_BIT | that.gl.DEPTH_BUFFER_BIT);
 		
 			that.fractalTexture.bind(0);
@@ -626,8 +627,8 @@ IFSRenderer.prototype = {
   },
   
   renderFractal: function() {
+  	this.gl.clearColor(0.0, 0.0, 0.0, 1.0);
     this.gl.clear(this.gl.COLOR_BUFFER_BIT | this.gl.DEPTH_BUFFER_BIT);
-    this.gl.clearColor(0.0, 0.0, 0.0, 1.0);
     
     var delta;
     if (this.width < this.height) delta = [this.height/this.width, 1];
