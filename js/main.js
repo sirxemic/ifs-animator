@@ -21,9 +21,9 @@ function initIFS() {
   ifsRenderer = new IFSRenderer(ifs, gl.canvas, gl, canvas2d.getContext('2d'));
   ifsRenderer.animating = settings.animating;
   ifsRenderer.animationSpeed = settings.animationSpeed;
-  
+
   ifs.brightness = 1.02;
-  
+
   for (var i = 0; i < 3; i++) {
     var angle = Math.random() * 2 * Math.PI;
     var scale = Math.random() * 0.6 + 0.3;
@@ -42,7 +42,7 @@ function initIFS() {
     };
     ifs.functions.push(item);
   }
-  
+
   ifsRenderer.fitToScreen();
 }
 
@@ -51,10 +51,10 @@ function saveIFS() {
   function append(val) {
     result += (Math.round(val * 10000) / 10000) + "|";
   }
-  
+
   append(ifs.brightness);
   append(ifsRenderer.animationSpeed);
-  
+
   m = ifs.globalTransform.matrix.m;
   append(m[0]);
   append(m[1]);
@@ -63,7 +63,7 @@ function saveIFS() {
   append(m[3]);
   append(m[7]);
   append(ifs.globalTransform.rotationSpeed);
-  
+
   append(ifs.functions.length);
   for (var i = 0; i < ifs.functions.length; i++) {
     m = ifs.functions[i].matrix.m;
@@ -73,12 +73,12 @@ function saveIFS() {
     append(m[5]);
     append(m[3]);
     append(m[7]);
-    
+
     c = ifs.functions[i].color;
     append(c[0]);
     append(c[1]);
     append(c[2]);
-    
+
     append(ifs.functions[i].rotationSpeed);
   }
   return result;
@@ -92,7 +92,7 @@ function loadIFS(values) {
   values = values.split('|');
   var error = false, m, it = 0;
   function next() {
-    if (it >= values.length) { 
+    if (it >= values.length) {
       error = true;
       return;
     }
@@ -102,10 +102,10 @@ function loadIFS(values) {
     if (isNaN(v)) error = true;
     return v;
   }
-  
+
   newIfs.brightness = next();
   newIfsRenderer.animationSpeed = next();
-  
+
   m = newIfs.globalTransform.matrix.m;
   m[0] = next(); if (error) return;
   m[1] = next(); if (error) return;
@@ -114,11 +114,11 @@ function loadIFS(values) {
   m[3] = next(); if (error) return;
   m[7] = next(); if (error) return;
   newIfs.globalTransform.rotationSpeed = next(); if (error) return;
-  
+
   var c, object, count;
-  
+
   count = next(); if (error) return;
-  
+
   for (var i = 0; i < count; i++) {
     object = {
       matrix: new GL.Matrix(),
@@ -126,7 +126,7 @@ function loadIFS(values) {
       _color: [1,1,1,1],
       rotationSpeed: 0
     };
-    
+
     m = object.matrix.m;
     m[0] = next(); if (error) return;
     m[1] = next(); if (error) return;
@@ -134,22 +134,22 @@ function loadIFS(values) {
     m[5] = next(); if (error) return;
     m[3] = next(); if (error) return;
     m[7] = next(); if (error) return;
-    
+
     c = object.color;
     c[0] = next(); if (error) return;
     c[1] = next(); if (error) return;
     c[2] = next(); if (error) return;
-    
+
     object.rotationSpeed = next(); if (error) return;
     newIfs.functions.push(object);
   }
-  
-  
+
+
   var wasAnimating = false;
-  
+
   if (ifs) ifs.dispose();
   if (ifsRenderer) ifsRenderer.dispose();
-  
+
   ifs = newIfs;
   ifsRenderer = newIfsRenderer;
 }
@@ -183,13 +183,13 @@ gl.canvas.addEventListener('contextmenu', function(e) {
 function glTextureToImage(texture) {
   var width = texture.width, height = texture.height,
       prevWidth = parseInt($canvasGl.css('width')), prevHeight = parseInt($canvasGl.css('height'));
-  
+
   $canvasGl.css({width: width, height: height});
   canvasGl.width = width;
   canvasGl.height = height;
-  
+
   gl.viewport(0, 0, width, height);
-  
+
   glTextureToImage.shader = glTextureToImage.shader || new GL.Shader([
     'varying vec2 coord;',
 
@@ -206,37 +206,41 @@ function glTextureToImage(texture) {
       'gl_FragColor = texture2D(texture, coord);',
     '}'
   ].join('\n'));
-  
+
   texture.bind(0);
   glTextureToImage.shader.uniforms({
     texture: 0
   }).draw(mesh);
   texture.unbind(0);
-  
+
   var result = canvasGl.toDataURL();
-  
+
   $canvasGl.css({width: prevWidth, height: prevHeight});
   canvasGl.width = prevWidth;
   canvasGl.height = prevHeight;
-  
+
   gl.viewport(0, 0, prevWidth, prevHeight);
-  
+
   return result;
 }
 
 function resize() {
-  var sizeW = $('#fractal-container').width(), 
+  var sizeW = $('#fractal-container').width(),
       sizeH = $('#fractal-container').height();
-      
+
   $canvasGl.css({width: sizeW, height: sizeH});
   canvasGl.width = sizeW;
   canvasGl.height = sizeH;
-  
+
   gl.viewport(0, 0, sizeW, sizeH);
-  
+
   $canvas2d.css({width: sizeW, height: sizeH});
   canvas2d.width = sizeW;
   canvas2d.height = sizeH;
+}
+
+function getUrlHash() {
+  return decodeURIComponent(document.location.hash.substr(1));
 }
 
 $(document).ready(function() {
@@ -244,22 +248,21 @@ $(document).ready(function() {
   $canvasGl = $(canvasGl);
   $canvas2d = $('#fractal-ui');
   canvas2d = $canvas2d[0];
-  
+
   $(window).bind('hashchange', function() {
-    console.log('hashchange', document.location.hash);
-		loadIFS(document.location.hash.substr(1));
+		loadIFS(getUrlHash());
 	});
-  
-  loadIFS(document.location.hash.substr(1));
+
+  loadIFS(getUrlHash());
   if (ifs === undefined) initIFS();
 
   $('#the-fractal').replaceWith($(canvasGl));
   $canvasGl.attr({'id': '#the-fractal', 'tabindex': '1'}).mousedown(function() { $(this).focus(); });
-  
+
   gl.animate();
-  
+
   $(window).resize(resize);
   resize();
-  
+
   initGuiControls();
 });
