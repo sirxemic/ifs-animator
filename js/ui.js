@@ -8,12 +8,12 @@ function uiBrightnessToIfsBrightness(value) {
 
 function initGuiControls() {
   $('#brightness').simpleSpinner({value: ifsBrightnessToUiBrightness(ifs.brightness)});
-  
+
   $('#new-fractal').click(function() {
     initIFS();
     $('#brightness').simpleSpinner({value: ifsBrightnessToUiBrightness(ifs.brightness)});
-  }); 
-  
+  });
+
   $('#save-fractal').click(function() {
     var path = window.location.toString(), hashPos = path.indexOf('#');
     if (hashPos != -1) path = path.substring(0,hashPos+1);
@@ -25,27 +25,24 @@ function initGuiControls() {
     $('#export-overlay').show();
     var $img = $('#export-overlay img');
     $img[0].src = glTextureToImage(ifs.fractalTexture);
-    setTimeout(function() {
-      $img.css({'margin-left': -$img.outerWidth() / 2, 'margin-top': -$img.outerHeight() / 2});
-    }, 10);
   });
-  
+
   $('#export-overlay').click(function() { $(this).hide(); })
 
   $('.simple-spinner').simpleSpinner();
-  
+
   $('#animation-speed .simple-spinner').bind('change', function(e, value) {
     ifsRenderer.animationSpeed = settings.animationSpeed = value;
   });
-  
+
   $('#item-rotation-speed .simple-spinner').bind('change', function(e, value) {
     ifsRenderer.selected.rotationSpeed = value;
   });
-  
+
   $('#brightness').bind('change', function(e, value) {
     ifs.brightness = uiBrightnessToIfsBrightness(value);
   });
-  
+
   $('#spinner-red').bind('change', function(e, value) {
     ifsRenderer.selected.color[0] = value;
   });
@@ -55,7 +52,7 @@ function initGuiControls() {
   $('#spinner-blue').bind('change', function(e, value) {
     ifsRenderer.selected.color[2] = value;
   });
-  
+
   $('#animation-button').click(function() {
     var $this = $(this);
     $this.toggleClass('on');
@@ -68,12 +65,12 @@ function initGuiControls() {
       $this.html('Animate!');
     }
   });
-  
+
   $('#fit-to-screen').click(function() {
     ifsRenderer.fitToScreen();
     ifs.reset();
   });
-  
+
   $('#item-add').click(function() {
     var angle = Math.random() * 2 * Math.PI,
         cos = Math.cos(angle) * (0.3 + 0.3 * Math.random()),
@@ -89,11 +86,11 @@ function initGuiControls() {
       _color: [1,1,1,1],
       rotationSpeed: 50 + 0 | Math.random() * 100
     };
-    
-    var m, 
+
+    var m,
         eMin = Infinity, eMax = -Infinity,
         fMin = Infinity, fMax = -Infinity;
-    
+
     for (var i = 0, l = ifs.functions.length; i < l; i++) {
       m = ifs.functions[i].matrix.m;
 
@@ -103,7 +100,7 @@ function initGuiControls() {
       eMax = Math.max(m[3], eMax);
       fMax = Math.max(m[7], fMax);
     }
-    
+
     function random(min, max) {
       return min + (max - min) * Math.random();
     }
@@ -112,26 +109,23 @@ function initGuiControls() {
     item.matrix.m[7] = random(fMin, fMax);
 
     ifs.functions.push(item);
-    ifsRenderer.selected = item;
-    updateProperties();
+    ifsRenderer.select(item);
   });
-  
+
   $('#random-color').click(function() {
     ifsRenderer.selected.color = [Math.round(Math.random() * 100), Math.round(Math.random() * 100), Math.round(Math.random() * 100)];
     updateProperties();
     ifs.reset();
   });
-  
+
   $('#item-delete').click(function() {
-    ifs.remove(ifsRenderer.selected);
-    ifsRenderer.selected = null;
-    updateProperties();
+    ifsRenderer.removeSelected();
   });
-  
+
   function coeffRound(val) {
     return Math.round(val * 10000) / 10000;
   }
-  
+
   function updateProperties() {
     if (!ifsRenderer.selected) {
       $('#item-editor').hide();
@@ -139,13 +133,13 @@ function initGuiControls() {
     else {
       var m = ifsRenderer.selected.matrix.m;
       $('#item-editor').show();
-      
+
       if (ifsRenderer.selected == ifs.globalTransform) {
         $('#item-color, #item-delete, #item-coeffs').hide();
       }
       else {
         $('#item-color, #item-delete, #item-coeffs').show();
-        
+
         $('#spinner-red').simpleSpinner({value: ifsRenderer.selected.color[0]});
         $('#spinner-green').simpleSpinner({value: ifsRenderer.selected.color[1]});
         $('#spinner-blue').simpleSpinner({value: ifsRenderer.selected.color[2]});
@@ -162,7 +156,7 @@ function initGuiControls() {
       $('#coeff-f').val(coeffRound(m[7]));
     }
   }
-  
+
   var coeffs = {
     'a': 0,
     'b': 1,
@@ -171,11 +165,11 @@ function initGuiControls() {
     'e': 3,
     'f': 7
   };
-  
+
   for (var coeff in coeffs) {
     (function(coeff) {
       var $el = $('#coeff-' + coeff);
-      
+
       $el.bind('focus', function() {
         $el.data('real-value', parseFloat($el.val()));
       })
@@ -195,23 +189,23 @@ function initGuiControls() {
     })(coeff);
   }
 
-  $canvasGl.on('select change remove', updateProperties);
+  $canvasGl.on('change', updateProperties);
   updateProperties();
-  
+
   $('#hq-fractal').click(function() {
     settings.textureSize = 2048;
     ifs.resizeTextures(settings.textureSize);
     $(this).hide();
     $('#lq-fractal').show();
   });
-  
+
   $('#lq-fractal').click(function() {
     settings.textureSize = 1024;
     ifs.resizeTextures(settings.textureSize);
     $(this).hide();
     $('#hq-fractal').show();
   });
-  
+
   $('#disable-flashes').click(function() {
     epilepsyCheck = true;
     $(this).hide();
